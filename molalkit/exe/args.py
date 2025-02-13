@@ -342,7 +342,8 @@ class DatasetModelArgs(DatasetArgs, ModelArgs):
                 kernel=self.kernels[i],
                 n_jobs=self.n_jobs,
                 seed=self.seed,
-                logger=self.logger
+                logger=self.logger,
+                weight_decay=model_config.get("weight_decay", 0.0)
             ) for i, model_config in enumerate(self.model_configs_dict)]
         return self._models
 
@@ -559,6 +560,7 @@ class LearningArgs(DatasetModelArgs, SelectorArgs, ForgetterArgs, EvaluationArgs
     """write trajectory file every no. steps of select-forget loops."""
     load_checkpoint: bool = False
     """load checkpoint file and continue the active learning."""
+    weight_decay: float = 0.0 # weight decay for the model training (L2 regulation)
 
     @property
     def top_uidx(self) -> Optional[List[int]]:

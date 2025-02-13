@@ -9,5 +9,6 @@
     "dropout": 0.0,
     "batch_size": 50,
     "ensemble_size": 1,
-    "continuous_fit": true
+    "continuous_fit": true,
+    "weight_decay": 0.01
 }

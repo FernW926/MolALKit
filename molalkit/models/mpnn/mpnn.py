@@ -61,6 +61,7 @@ class MPNN:
                  # other parameters
                  continuous_fit: bool = False,
                  logger: Logger = None,
+                 weight_decay: float = 0.0,
                  ):
         args = TrainArgs()
         args.save_dir = save_dir
@@ -102,6 +103,7 @@ class MPNN:
         self.args = args
         self.continuous_fit = continuous_fit
         self.logger = logger
+        self.weight_decay = weight_decay
         args_predict = PredictArgs()
         args_predict.uncertainty_method = uncertainty_method
         args_predict.uncertainty_dropout_p = uncertainty_dropout_p
@@ -198,7 +200,7 @@ class MPNN:
             else:
                 debug(f"Number of parameters = {param_count_all(model):,}")
             # Optimizers
-            optimizer = build_optimizer(model, args)
+            optimizer = build_optimizer(model, args,weight_decay=self.weight_decay)
 
             # Learning rate schedulers
             scheduler = build_lr_scheduler(optimizer, args)

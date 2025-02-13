@@ -29,6 +29,7 @@ def molalkit_run(arguments=None):
             top_uidx=args.top_uidx,
             kernel=args.kernels[0],
             detail=args.detail,
+            weight_decay=args.weight_decay 
         )
         current_loop = 0
         active_learner.evaluate()
