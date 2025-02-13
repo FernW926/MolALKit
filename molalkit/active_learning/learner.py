@@ -76,7 +76,8 @@ class ActiveLearner:
                  models, id2datapoints: List[Dict],
                  datasets_train, datasets_pool, datasets_val = None,
                  metrics: List[Metric] = None, top_uidx: List[int] = None,
-                 kernel: Callable = None, detail: bool = False):
+                 kernel: Callable = None, detail: bool = False,
+                 weight_decay: float = None):
         """ Active learning class.
         
         Parameters
@@ -124,6 +125,7 @@ class ActiveLearner:
         self.current_iter = 0
         self.model_fitted = False
         self.active_learning_traj = ActiveLearningTrajectory(metrics=self.metrics)
+        self.weight_decay = weight_decay
 
     @property
     def train_size(self) -> int:
