@@ -118,6 +118,7 @@ class MPNN:
         if not self.continuous_fit and torch.cuda.is_available():
             torch.cuda.empty_cache()
         args = self.args
+        args.weight_decay = self.weight_decay
         args.train_data_size = len(train_data)
         logger = self.logger
         if logger is not None:
@@ -200,7 +201,7 @@ class MPNN:
             else:
                 debug(f"Number of parameters = {param_count_all(model):,}")
             # Optimizers
-            optimizer = build_optimizer(model, args,weight_decay=self.weight_decay)
+            optimizer = build_optimizer(model, args)
 
             # Learning rate schedulers
             scheduler = build_lr_scheduler(optimizer, args)
