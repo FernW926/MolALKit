@@ -36,7 +36,7 @@ def get_kernel_from_config(model_config: Dict, dataset, kernel_pkl_path) -> Call
 def get_model_from_config(model_config: Dict, dataset, task_type, save_dir,
                           data_path, smiles_columns, targets_columns, 
                           features_generators, kernel,
-                          n_jobs, seed, logger) -> Callable:
+                          n_jobs, seed, logger,weight_decay) -> Callable:
     data_format = model_config["data_format"]
     if data_format == "mgktools":
         smiles_full = dataset.X_smiles.ravel()
@@ -94,7 +94,8 @@ def get_model_from_config(model_config: Dict, dataset, task_type, save_dir,
         continuous_fit=model_config.get("continuous_fit") or False,
         n_jobs=n_jobs,
         seed=seed,
-        logger=logger
+        logger=logger,
+        weight_decay=weight_decay
     )
 
 

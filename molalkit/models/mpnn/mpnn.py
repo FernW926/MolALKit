@@ -119,6 +119,7 @@ class MPNN:
             torch.cuda.empty_cache()
         args = self.args
         args.weight_decay = self.weight_decay
+        print(args.weight_decay)
         args.train_data_size = len(train_data)
         logger = self.logger
         if logger is not None:
