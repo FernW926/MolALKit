@@ -124,6 +124,7 @@ class ActiveLearner:
         self.current_iter = 0
         self.model_fitted = False
         self.active_learning_traj = ActiveLearningTrajectory(metrics=self.metrics)
+        self.epoch_losses = [] # to store the epoch losses
 
     @property
     def train_size(self) -> int:
@@ -139,7 +140,13 @@ class ActiveLearner:
         assert self.selector is not None, "You need to provide a selector before step_select()."
         # train the model if it is not trained in the evaluation step, and the selection method is not random.
         if not self.model_fitted and not isinstance(self.selector, RandomSelector):
-            self.models[0].fit_molalkit(self.datasets_train[0])
+            epoch_loss_data = self.models[0].fit_molalkit(self.datasets_train[0])
+            for data in epoch_loss_data:
+                self.epoch_losses.append({
+                    "iter": self.current_iter,
+                    "epoch": data["epoch"],
+                    "loss": data["loss"]
+                })
         selected_idx, acquisition, remain_idx = self.selector(model=self.models[0],
                                                               dataset_pool=self.datasets_pool[0],
                                                               kernel=self.kernel,
@@ -165,7 +172,7 @@ class ActiveLearner:
         assert self.forgetter is not None, "You need to provide a forgetter before step_forget()."
         # train the model if the forgetter is not random or first.
         if not self.model_fitted and not self.forgetter.__class__ in [RandomForgetter, FirstForgetter]:
-            self.models[0].fit_molalkit(self.datasets_train[0])
+            epoch_loss_data_forget =self.models[0].fit_molalkit(self.datasets_train[0])
         # forget algorithm is applied.
         forget_idx, acquisition, remain_idx = self.forgetter(model=self.models[0],
                                                              dataset_train=self.datasets_train[0],
@@ -196,7 +203,7 @@ class ActiveLearner:
         # evaluate the prediction performance of ML model on the validation set
         if self.metrics is not None:
             for i, model in enumerate(self.models):
-                model.fit_molalkit(self.datasets_train[i])
+                epoch_loss_data_evalluate = model.fit_molalkit(self.datasets_train[i])
                 y_pred = model.predict_value(self.datasets_val[i])
                 if self.detail:
                     df = pd.DataFrame({"true": self.datasets_val[i].y.ravel(), "pred": y_pred})
@@ -213,6 +220,13 @@ class ActiveLearner:
         df_traj = pd.DataFrame(self.active_learning_traj.get_results())
         df_traj.to_csv(os.path.join(self.save_dir, "al_traj.csv"), index=False)
 
+    def save_epoch_losses(self):
+        # save loss to csv
+        if not self.epoch_losses:
+            return
+        df_losses = pd.DataFrame(self.epoch_losses, columns=["iter", "epoch", "loss"])
+        df_losses.to_csv(os.path.join(self.save_dir, "epoch_losses.csv"), index=False)
+        
     @staticmethod
     def get_top_score(dataset, top_uidx) -> float:
         N_top_k = 0
