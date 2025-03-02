@@ -207,7 +207,7 @@ class MPNN:
             n_iter = 0
             for epoch in trange(args.epochs):
                 debug(f"Epoch {epoch}")
-                n_iter = train(
+                n_iter, iteration_losses = train(
                     model=model,
                     data_loader=train_data_loader,
                     loss_func=loss_func,
@@ -218,6 +218,10 @@ class MPNN:
                     logger=logger,
                     writer=writer
                 )
+                # record the loss of the epoch
+                epoch_loss = np.mean(iteration_losses)
+                info(f"Epoch {epoch}, Loss: {epoch_loss:.6f}") # log the loss to terminal
+                
                 if isinstance(scheduler, ExponentialLR):
                     scheduler.step()
             if len(self.models) < args.ensemble_size:
