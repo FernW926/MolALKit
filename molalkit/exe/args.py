@@ -335,7 +335,7 @@ class DatasetModelArgs(DatasetArgs, ModelArgs):
                 dataset=self.datasets_full[i],
                 task_type=self.task_type,
                 save_dir=self.save_dir,
-                data_path=self.data_path,
+                data_path="%s/full.csv" % self.save_dir,
                 smiles_columns=self.smiles_columns,
                 targets_columns=self.targets_columns,
                 features_generators=self.features_generators[i],
@@ -494,12 +494,14 @@ class SelectorArgs(Tap):
 class ForgetterArgs(Tap):
     forget_method: Literal["first", "random", 
                            "min_oob_uncertainty", "max_oob_uncertainty", 
-                           "min_oob_error", "max_loo_error",
+                           "min_oob_error", "max_oob_error",
                            "min_loo_uncertainty", "max_loo_uncertainty",
                            "min_loo_error", "max_loo_error"] = None
     """the forget method."""
     f_batch_size: int = 1
     """number of samples to forget in each iteration."""
+    f_min_train_size: int = None
+    """Forget method activate only when the number of samples in the training set larger than this number."""
     seed: int = 0
     """random seed."""
 
@@ -605,4 +607,4 @@ class LearningArgs(DatasetModelArgs, SelectorArgs, ForgetterArgs, EvaluationArgs
             elif dn < 0:
                 self.max_iter = len(self.datasets_train[0]) // (-dn) - 1
             else:
-                self.max_iter = 100
+                self.max_iter = len(self.datasets_pool[0]) // self.n_select
