@@ -67,7 +67,8 @@ def get_model(data_format: Literal["mgktools", "chemprop", "fingerprints"],
               uncertainty_dropout_p: float = 0.1,
               dropout_sampling_size: int = 10,
               continuous_fit: bool = False,
-              logger: Logger = None):
+              logger: Logger = None,
+              weight_decay: float = 0.0):
     if alpha.__class__ == str:
         alpha = float(open(alpha).read())
 
@@ -200,7 +201,9 @@ def get_model(data_format: Literal["mgktools", "chemprop", "fingerprints"],
                     n_jobs=n_jobs,
                     seed=seed,
                     continuous_fit=continuous_fit,
-                    logger=logger or EmptyLogger())
+                    logger=logger or EmptyLogger(),
+                    weight_decay=weight_decay
+                    )
     else:
         raise ValueError(f"unknown data_format {data_format}")
 
