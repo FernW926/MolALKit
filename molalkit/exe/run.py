@@ -46,6 +46,7 @@ def molalkit_run(arguments=None):
             logger.debug("Evaluate step")
         if i % args.write_traj_stride == 0:
             active_learner.write_traj()
+        active_learner.save_epoch_losses()
         if args.save_cpt_stride is not None and i % args.save_cpt_stride == 0:
             active_learner.current_loop = i + 1
             active_learner.save(path=args.save_dir, filename="al_temp.pkl", overwrite=True)

@@ -124,6 +124,8 @@ class MPNN:
             debug, info = logger.debug, logger.info
         else:
             debug = info = print
+        # initialize to store losses
+        epoch_loss_data = []
 
         # Set pytorch seed for random initial weights
         torch.manual_seed(args.pytorch_seed)
@@ -208,7 +210,7 @@ class MPNN:
             n_iter = 0
             for epoch in trange(args.epochs):
                 debug(f"Epoch {epoch}")
-                n_iter = train(
+                n_iter, iteration_losses = train(
                     model=model,
                     data_loader=train_data_loader,
                     loss_func=loss_func,
@@ -219,6 +221,14 @@ class MPNN:
                     logger=logger,
                     writer=writer
                 )
+                # record the loss of the epoch
+                epoch_loss = np.mean(iteration_losses)
+                info(f"Epoch {epoch}, Loss: {epoch_loss:.6f}") # log the loss to terminal
+                epoch_loss_data.append({
+                "epoch": epoch,
+                "loss": epoch_loss
+                })
+                
                 if isinstance(scheduler, ExponentialLR):
                     scheduler.step()
             if len(self.models) < args.ensemble_size:
@@ -229,6 +239,7 @@ class MPNN:
             # save the model after training
             # save_checkpoint(os.path.join(save_dir, MODEL_FILE_NAME), model, scaler,
             #                 features_scaler, None, None, args)
+        return epoch_loss_data
 
     def predict(self, pred_data, batch_size: int = 100000):
         """
