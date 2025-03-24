@@ -10,5 +10,5 @@
     "batch_size": 50,
     "ensemble_size": 1,
     "continuous_fit": true,
-    "weight_decay": 0.0005
+    "weight_decay": 0
 }
