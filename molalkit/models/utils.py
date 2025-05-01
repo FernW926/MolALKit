@@ -11,7 +11,7 @@ from mgktools.kernels.PreComputed import calc_precomputed_kernel_config
 from molalkit.exe.logging import EmptyLogger
 
 
-def get_model(data_format: Literal["mgktools", "chemprop", "fingerprints"],
+def get_model(data_format: Literal["mgktools", "chemprop", "graphgps"],
               task_type: Literal["regression", "binary", "multiclass"],
               n_jobs: int = 8,
               seed: int = 0,
@@ -67,6 +67,8 @@ def get_model(data_format: Literal["mgktools", "chemprop", "fingerprints"],
               uncertainty_dropout_p: float = 0.1,
               dropout_sampling_size: int = 10,
               continuous_fit: bool = False,
+              # graphgps arguments
+              cfg_path: str = None,
               logger: Logger = None,
               weight_decay: float = 0.0):
     if alpha.__class__ == str:
@@ -204,6 +206,14 @@ def get_model(data_format: Literal["mgktools", "chemprop", "fingerprints"],
                     logger=logger or EmptyLogger(),
                     weight_decay=weight_decay
                     )
+    elif data_format == "graphgps":
+        from molalkit.models.graphgps.graphgps import GraphGPS
+        return GraphGPS(save_dir=save_dir,
+                        cfg_path=cfg_path,
+                        ensemble_size=ensemble_size,
+                        number_of_molecules=number_of_molecules,
+                        n_jobs=n_jobs,
+                        seed=seed)
     else:
         raise ValueError(f"unknown data_format {data_format}")
 

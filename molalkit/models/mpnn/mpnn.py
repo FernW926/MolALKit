@@ -108,9 +108,11 @@ class MPNN:
         args_predict.uncertainty_dropout_p = uncertainty_dropout_p
         args_predict.dropout_sampling_size = dropout_sampling_size
         # args_predict.checkpoint_dir = save_dir
-        # args_predict.test_path = "fake"
-        # args_predict.preds_path = "fake"
+        args_predict.test_path = "fake"
+        args_predict.preds_path = "fake"
         # args_predict.process_args()
+        args_predict._parsed = True
+        args_predict.checkpoint_paths = [None] * args.ensemble_size
         self.args_predict = args_predict
 
     def fit_molalkit(self, train_data):
@@ -241,7 +243,7 @@ class MPNN:
             #                 features_scaler, None, None, args)
         return epoch_loss_data
 
-    def predict(self, pred_data, batch_size: int = 100000):
+    def predict(self, pred_data, batch_size: int = 10000):
         """
         Generate predictions for input data using trained models.
         
@@ -278,7 +280,6 @@ class MPNN:
         all_uncs = []
         # Calculate total number of batches
         total_batches = (len(pred_data) + batch_size - 1) // batch_size
-        print(total_batches)
         # Process data in chunks of 100,000
         for i in range(total_batches):
             models = (model for model in self.models)
