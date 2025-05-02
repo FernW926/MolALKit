@@ -30,6 +30,7 @@ def molalkit_run(arguments=None):
             kernel=args.kernels[0],
             detail=args.detail
         )
+        active_learner.init_shrink_perturb()
         current_loop = 0
         active_learner.evaluate()
     for i in range(current_loop, args.max_iter or 100):
@@ -47,6 +48,7 @@ def molalkit_run(arguments=None):
         if i % args.write_traj_stride == 0:
             active_learner.write_traj()
         active_learner.save_epoch_losses()
+        active_learner.apply_shrink_perturb()
         if args.save_cpt_stride is not None and i % args.save_cpt_stride == 0:
             active_learner.current_loop = i + 1
             active_learner.save(path=args.save_dir, filename="al_temp.pkl", overwrite=True)

@@ -125,6 +125,7 @@ class ActiveLearner:
         self.model_fitted = False
         self.active_learning_traj = ActiveLearningTrajectory(metrics=self.metrics)
         self.epoch_losses = [] # to store the epoch losses
+        self.original_params = None
 
     @property
     def train_size(self) -> int:
@@ -226,6 +227,32 @@ class ActiveLearner:
             return
         df_losses = pd.DataFrame(self.epoch_losses, columns=["iter", "epoch", "loss"])
         df_losses.to_csv(os.path.join(self.save_dir, "epoch_losses.csv"), index=False)
+        
+    def init_shrink_perturb(self, shrink_factor=0.4, perturb_std=0.1):
+        """初始化 shrink & perturb 参数并保存初始权重"""
+        self.shrink_factor = shrink_factor
+        self.perturb_std = perturb_std
+        self.original_params = [
+            [p.data.clone() for p in model.parameters()] 
+            for model in self.models
+        ]
+    
+    def apply_shrink_perturb(self):
+        """应用 shrink & perturb 操作"""
+        if self.original_params is None:
+            raise RuntimeError("Must call init_shrink_perturb() first")
+        
+        for model, orig_params in zip(self.models, self.original_params):
+            with torch.no_grad():
+                for param, orig_param in zip(model.parameters(), orig_params):
+                    # Shrink: 混合当前参数和初始参数
+                    param.data.mul_(self.shrink_factor).add_(
+                        orig_param * (1 - self.shrink_factor)
+                    )
+                    # Perturb: 添加噪声
+                    param.data.add_(
+                        torch.randn_like(param) * self.perturb_std
+                    )
 
     @staticmethod
     def get_top_score(dataset, top_uidx) -> float:
@@ -243,6 +270,11 @@ class ActiveLearner:
                 "`overwrite=True`."
             )
         store = self.__dict__.copy()
+        if self.original_params is not None:
+        store['original_params'] = [
+            [p.cpu() for p in params] 
+            for params in self.original_params
+        ]
         # Chemprop TrainArgs is unpicklable, transform into dict.
         for model in store["models"]:
             if isinstance(model, MPNN):
@@ -259,6 +291,11 @@ class ActiveLearner:
     def load(cls, path, filename="al.pkl"):
         f_al = os.path.join(path, filename)
         store = pickle.load(open(f_al, "rb"))
+        if 'original_params' in store:
+        store['original_params'] = [
+            [p.to(store['models'][i].device) for p in params]
+            for i, params in enumerate(store['original_params'])
+        ]
         # transform Chemprop TrainArgs from dict back to TrainArgs
         for model in store["models"]:
             if isinstance(model, MPNN):
