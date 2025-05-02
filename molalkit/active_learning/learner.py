@@ -270,11 +270,7 @@ class ActiveLearner:
                 "`overwrite=True`."
             )
         store = self.__dict__.copy()
-        if self.original_params is not None:
-            store['original_params'] = [
-                [p.cpu() for p in params] 
-                for params in self.original_params
-            ]
+
         # Chemprop TrainArgs is unpicklable, transform into dict.
         for model in store["models"]:
             if isinstance(model, MPNN):
@@ -291,11 +287,6 @@ class ActiveLearner:
     def load(cls, path, filename="al.pkl"):
         f_al = os.path.join(path, filename)
         store = pickle.load(open(f_al, "rb"))
-        if 'original_params' in store:
-            store['original_params'] = [
-                [p.to(store['models'][i].device) for p in params]
-                for i, params in enumerate(store['original_params'])
-            ]
         # transform Chemprop TrainArgs from dict back to TrainArgs
         for model in store["models"]:
             if isinstance(model, MPNN):
