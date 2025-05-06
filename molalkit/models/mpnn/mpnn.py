@@ -197,6 +197,7 @@ class MPNN:
                 if args.cuda:
                     debug("Moving model to cuda")
                 model = model.to(args.device)
+                
 
             if args.mpn_path is not None:
                 debug(f"Loading MPN parameters from {args.mpn_path}.")
@@ -338,8 +339,8 @@ class MPNN:
         
         self.last_iteration = current_iter
         
-        # On first call (iter=0), save initial parameters
-        if current_iter == 0:
+        # On first call (iter=-1), save initial parameters
+        if current_iter == -1:
             if not hasattr(self, 'init_params'):
                 self.init_params = {
                     n: p.clone().detach() 
