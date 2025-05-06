@@ -140,7 +140,7 @@ class ActiveLearner:
         assert self.selector is not None, "You need to provide a selector before step_select()."
         # train the model if it is not trained in the evaluation step, and the selection method is not random.
         if not self.model_fitted and not isinstance(self.selector, RandomSelector):
-            epoch_loss_data = self.models[0].fit_molalkit(self.datasets_train[0])
+            epoch_loss_data = self.models[0].fit_molalkit(self.datasets_train[0], current_iter=self.current_iter)
             for data in epoch_loss_data:
                 self.epoch_losses.append({
                     "iter": self.current_iter,
@@ -172,7 +172,7 @@ class ActiveLearner:
         assert self.forgetter is not None, "You need to provide a forgetter before step_forget()."
         # train the model if the forgetter is not random or first.
         if not self.model_fitted and not self.forgetter.__class__ in [RandomForgetter, FirstForgetter]:
-            epoch_loss_data_forget =self.models[0].fit_molalkit(self.datasets_train[0])
+            epoch_loss_data_forget =self.models[0].fit_molalkit(self.datasets_train[0], current_iter=self.current_iter)
         # forget algorithm is applied.
         forget_idx, acquisition, remain_idx = self.forgetter(model=self.models[0],
                                                              dataset_train=self.datasets_train[0],
@@ -203,7 +203,7 @@ class ActiveLearner:
         # evaluate the prediction performance of ML model on the validation set
         if self.metrics is not None:
             for i, model in enumerate(self.models):
-                epoch_loss_data_evalluate = model.fit_molalkit(self.datasets_train[i])
+                epoch_loss_data_evalluate = model.fit_molalkit(self.datasets_train[i], current_iter=self.current_iter)
                 y_pred = model.predict_value(self.datasets_val[i])
                 if self.detail:
                     df = pd.DataFrame({"true": self.datasets_val[i].y.ravel(), "pred": y_pred})

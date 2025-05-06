@@ -61,6 +61,8 @@ class MPNN:
                  continuous_fit: bool = False,
                  logger: Logger = None,
                  weight_decay: float = 0.0,
+                 shrink_factor: float = 0.4,  
+                 perturb_std: float = 0.1,
                  ):
         args = TrainArgs()
         args.save_dir = save_dir
@@ -103,6 +105,9 @@ class MPNN:
         self.continuous_fit = continuous_fit
         self.logger = logger
         self.weight_decay = weight_decay
+        self.shrink_factor = shrink_factor
+        self.perturb_std = perturb_std
+        self.last_iteration = -1
         args_predict = PredictArgs()
         args_predict.uncertainty_method = uncertainty_method
         args_predict.uncertainty_dropout_p = uncertainty_dropout_p
@@ -113,7 +118,7 @@ class MPNN:
         # args_predict.process_args()
         self.args_predict = args_predict
 
-    def fit_molalkit(self, train_data):
+    def fit_molalkit(self, train_data, current_iter=0):
         if not self.continuous_fit and torch.cuda.is_available():
             torch.cuda.empty_cache()
         args = self.args
@@ -124,6 +129,11 @@ class MPNN:
             debug, info = logger.debug, logger.info
         else:
             debug = info = print
+            
+        if self.continuous_fit and hasattr(self, "models") and len(self.models) > 0:
+            for model in self.models:
+                self.shrink_and_perturb(model, current_iter)
+            
         # initialize to store losses
         epoch_loss_data = []
 
@@ -172,7 +182,6 @@ class MPNN:
             assert len(self.models) == args.ensemble_size
         else:
             self.models = []
-
         self.scalers = []
         for model_idx in range(args.ensemble_size):
             save_dir = os.path.join(args.save_dir, f"model_{model_idx}")
@@ -318,6 +327,36 @@ class MPNN:
             return (0.25 - np.var(preds, axis=1)) * 4
         else:
             return self.predict(pred_data)[1]
+        
+    def shrink_and_perturb(self, model, current_iter):
+        """
+        Modified shrink and perturb using initial parameters saving,
+        following the same pattern as continuous_fit parameter keeping
+        """
+        if current_iter <= self.last_iteration:
+            return
+        
+        self.last_iteration = current_iter
+        
+        # On first call (iter=0), save initial parameters
+        if current_iter == 0:
+            if not hasattr(self, 'init_params'):
+                self.init_params = {
+                    n: p.clone().detach() 
+                    for n, p in model.named_parameters()
+                }
+            return
 
+        if not hasattr(self, 'init_params'):
+            raise RuntimeError("Must call with iter=0 first to save initial params")
+
+        with torch.no_grad():
+            for name, param in model.named_parameters():
+                # Apply: θ_new = λ*θ_current + σ*θ_initial
+                param.data.mul_(self.shrink_factor).add_(
+                    self.init_params[name], 
+                    alpha=self.perturb_std
+                )
+                
     def predict_value(self, pred_data):
-        return self.predict(pred_data)[0]
+        return self.predict(pred_data)[0]  
