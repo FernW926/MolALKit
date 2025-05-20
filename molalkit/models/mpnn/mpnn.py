@@ -199,6 +199,19 @@ class MPNN:
                 model = model.to(args.device)
                 if self.continuous_fit:
                     self.shrink_and_perturb(model, current_iter)
+                    
+                # Debug: Check model interface
+                debug("[DEBUG] Checking model methods and attributes...")
+
+                has_named = hasattr(model, "named_parameters")
+                has_unnamed = hasattr(model, "parameters")
+
+                debug(f"[DEBUG] model has `named_parameters`: {has_named}")
+                debug(f"[DEBUG] model has `parameters`: {has_unnamed}")
+
+                debug("[DEBUG] Listing model attributes:")
+                for attr in dir(model):
+                    debug(f"    - {attr}")
                 
 
             if args.mpn_path is not None:
@@ -346,7 +359,7 @@ class MPNN:
             if not hasattr(self, 'init_params'):
                 self.init_params = {
                     n: p.clone().detach() 
-                    for n, p in model.parameters()
+                    for n, p in model.named_parameters()
                 }
             return
 
@@ -354,7 +367,7 @@ class MPNN:
             raise RuntimeError("Must call with iter=0 first to save initial params")
 
         with torch.no_grad():
-            for name, param in model.parameters():
+            for name, param in model.named_parameters():
                 # Apply: θ_new = λ*θ_current + σ*θ_initial
                 param.data.mul_(self.shrink_factor).add_(
                     self.init_params[name], 
