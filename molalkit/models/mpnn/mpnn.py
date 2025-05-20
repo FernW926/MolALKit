@@ -130,9 +130,9 @@ class MPNN:
         else:
             debug = info = print
             
-        if self.continuous_fit and hasattr(self, "models") and len(self.models) > 0:
-            for model in self.models:
-                self.shrink_and_perturb(model, current_iter)
+        # if self.continuous_fit and hasattr(self, "models") and len(self.models) > 0:
+        #     for model in self.models:
+        #         self.shrink_and_perturb(model, current_iter)
             
         # initialize to store losses
         epoch_loss_data = []
@@ -197,6 +197,8 @@ class MPNN:
                 if args.cuda:
                     debug("Moving model to cuda")
                 model = model.to(args.device)
+                if self.continuous_fit:
+                    self.shrink_and_perturb(model, current_iter)
                 
 
             if args.mpn_path is not None:
@@ -339,12 +341,12 @@ class MPNN:
         
         self.last_iteration = current_iter
         
-        # On first call (iter=-1), save initial parameters
-        if current_iter == -1:
+        # On first call (iter=0), save initial parameters
+        if current_iter == 0:
             if not hasattr(self, 'init_params'):
                 self.init_params = {
                     n: p.clone().detach() 
-                    for n, p in model.named_parameters()
+                    for n, p in model.parameters()
                 }
             return
 
@@ -352,7 +354,7 @@ class MPNN:
             raise RuntimeError("Must call with iter=0 first to save initial params")
 
         with torch.no_grad():
-            for name, param in model.named_parameters():
+            for name, param in model.parameters():
                 # Apply: θ_new = λ*θ_current + σ*θ_initial
                 param.data.mul_(self.shrink_factor).add_(
                     self.init_params[name], 
