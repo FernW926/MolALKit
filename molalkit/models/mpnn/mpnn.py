@@ -61,8 +61,8 @@ class MPNN:
                  continuous_fit: bool = False,
                  logger: Logger = None,
                  weight_decay: float = 0.0,
-                 shrink_factor: float = 0.4,  
-                 perturb_std: float = 0.1,
+                 shrink_factor: float = 1,  
+                 perturb_std: float = 0.01,
                  ):
         args = TrainArgs()
         args.save_dir = save_dir
